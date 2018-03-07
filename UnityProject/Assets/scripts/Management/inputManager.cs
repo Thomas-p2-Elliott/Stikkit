@@ -24,8 +24,9 @@ public class inputManager : MonoBehaviour {
 
 	//Main Run-Time Variables for Script
 	// These are private as they are handed to the actionManager ONLY for processing to keep things neat.
+	private enum inputType {tap, pressHold, swipeLeft, swipeRight, swipeUp, swipeDown};
 	private bool touchStarted, touchEnded, mouseButtonDown, mouseButtonHeld, mouseButtonReleased;
-	private Vector2 touchPos;
+	private Vector2 touchStartPos, touchEndPos;
 	private float touchHoldTime;
 
 	// Use this for initialization
@@ -38,7 +39,7 @@ public class inputManager : MonoBehaviour {
 		mouseButtonReleased = true;
 
 		//Set Values for Touch
-		touchPos.x = touchPos.y = 0;
+		touchStartPos = touchEndPos = new Vector2(0,0);
 		touchStarted = false; touchEnded = true;
 		touchHoldTime = 0.0f;
 	}
@@ -64,18 +65,17 @@ public class inputManager : MonoBehaviour {
 		//Set touch start & end values
 		touchStarted = true;
 		touchEnded = false;
-		//Set pos & hold time values
+		//Set both pos & hold time values
 		touchHoldTime = 0.0f;
-		if (enableMouse) { touchPos = Input.mousePosition; } else {	touchPos = Input.touches[0].position; };
+		if (enableMouse) { touchStartPos = touchEndPos = Input.mousePosition; } else {	touchStartPos = touchEndPos = Input.touches[0].position; };
 	}
 
 	//Touch / Click Hold
 	private void TouchHeld() {
 		//print("InputManager: touchHeld");
 
-		//Add to hold time & update pos
+		//Add to hold time
 		touchHoldTime += Time.deltaTime;
-		if (enableMouse) { touchPos = Input.mousePosition; } else {	touchPos = Input.touches[0].position; };
 	}
 
 	//Touch / Click End
@@ -87,10 +87,78 @@ public class inputManager : MonoBehaviour {
 		touchEnded = true;
 		//Add to hold time
 		touchHoldTime += Time.deltaTime;
-		//Update pos
-		if (enableMouse) { touchPos = Input.mousePosition; } else {	touchPos = Input.touches[0].position; };
+		//Update end pos only
+		if (enableMouse) { touchEndPos = Input.mousePosition; } else {	touchEndPos = Input.touches[0].position; };
+		//Get Touch Type (Tap, Swipe(Dir), HeldPress)
+		//	0 = Tap, 1 = Held Press, 2 = LeftSwipe, 3 = Right Swipe, 4 = UpSwipe, 5 = DownSwipe
+		int touchType = GetTouchType (touchStartPos, touchEndPos, touchHoldTime);
 		//Pass event info to action manager
-		actionMan.TouchEvent (touchPos, touchHoldTime);
+		actionMan.TouchEvent (touchStartPos, touchEndPos, touchType);
+	}
+
+	//		Gets Touch Type (Tap, Swipe(Dir), HeldPress)
+	//	0 = Tap, 1 = Held Press, 2 = LeftSwipe, 3 = Right Swipe, 4 = UpSwipe, 5 = DownSwipe
+	private int GetTouchType(Vector2 startPos, Vector2 endPos, float holdTime) {
+
+		//Variables for function
+		inputType resultingType = inputType.tap;	//Value to return to caller
+		float minSwipeDist 		= 30f; 				//Minimum distance in pixelCoords for a swipe to be counted
+		float minSwipeTime 		= 0.1f;  			//Minimum time a touch must be held for a swipe to count
+		float minHoldTime 		= 0.75f;  			//Minimum time (s) a touch must be held for to be considered a held press
+
+		//Check for tap
+		if (holdTime < minSwipeTime) {
+			resultingType = inputType.tap;
+			return (int) resultingType;
+		};
+
+		//Check for held press
+		if (holdTime >= minHoldTime) {
+			resultingType = inputType.pressHold;
+			return (int) resultingType;
+		};
+
+		//	Check for swipe
+		if (holdTime >= minSwipeTime && holdTime < minHoldTime) {
+
+			// Check for Horizontal Swipe Distance
+			bool xDirRight = false; 	//Bool for L/R
+			float xDiff = 0.0f; 	  	//Swipe Distance
+			if (startPos.x >= endPos.x) {
+				xDirRight = false;
+				xDiff = startPos.x - endPos.x;
+			} else {
+				xDirRight = true;
+				xDiff = endPos.x - startPos.x;
+			};
+
+			// Check for Vertical Swipe Distance
+			bool yDirUp = false; 		//Bool for Up/Down
+			float yDiff = 0.0f; 	  	//Swipe Distance
+			if (startPos.y >= endPos.y) {
+				yDirUp = false;
+				yDiff = startPos.y - endPos.y;
+			} else {
+				yDirUp = true;
+				yDiff = endPos.y - startPos.y;
+			};
+
+			//	Check if either were big enough to be considered a swipe
+			// Check left/right first, then up/down, a swipe cannot be both, so if & else if
+			if (xDiff >= minSwipeDist) {
+				//Set swipe left/right values
+				if (xDirRight) { resultingType = inputType.swipeRight; } else { resultingType = inputType.swipeLeft; };
+			} else if (yDiff >= minSwipeDist) {
+				//Set swipe uo/down values
+				if (yDirUp) { resultingType = inputType.swipeUp; } else { resultingType = inputType.swipeDown; };
+			} else {
+				//Is not a swipe, or a touchHoldPress, just a tap, so set type
+				resultingType = inputType.tap;
+			};
+		};
+
+		//Return the type
+		return (int) resultingType;
 	}
 
 	//Check for touch input
@@ -127,7 +195,7 @@ public class inputManager : MonoBehaviour {
 			currentTouch.phase = TouchPhase.Canceled;
 			touchStarted = false;
 			touchEnded = true;
-			touchPos = currentTouch.position;
+			touchStartPos = touchEndPos = new Vector2(0,0);
 			touchHoldTime = 0.0f;
 		};
 	}

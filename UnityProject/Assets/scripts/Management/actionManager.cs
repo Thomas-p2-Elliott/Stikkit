@@ -16,29 +16,35 @@ public class actionManager : MonoBehaviour {
 	//	Internal script vars
 	//Used to prevent multiple events running at once
 	private bool actionInProgress = false; 
+	//Mirror of the values used in inputManager
+	//	0 = Tap, 1 = Held Press, 2 = LeftSwipe, 3 = Right Swipe, 4 = UpSwipe, 5 = DownSwipe
+	private enum inputType {tap, pressHold, swipeLeft, swipeRight, swipeUp, swipeDown};
 
 	// Use this for initialization
 	void Start () {
 		LogAction("Started with debug logging enabled."); //LogAction only runs with debugging enabled
 	}
-	
+
 	// Update is called once per frame
 	void Update () {
 
 	}
 
-	public void TouchEvent(Vector2 touchPos, float touchHoldTime) {
+	//Event called by inputManager, gives input with startPos and endPos in pixel coords, and the type of input given
+	//	0 = Tap, 1 = Held Press, 2 = LeftSwipe, 3 = Right Swipe, 4 = UpSwipe, 5 = DownSwipe
+	public void TouchEvent (Vector2 touchStartPos, Vector2 touchEndPos, int touchType) {
+
 		//If no action is currently being performed, process this one
 		if (!actionInProgress) {
-			StartCoroutine (TouchEvent_c(touchPos, touchHoldTime));
+			StartCoroutine (TouchEvent_c(touchStartPos, touchEndPos, touchType));
 		} else {
 			LogAction("Warning: Action ignored, action already running.");
 		};
 	}
 
-	IEnumerator TouchEvent_c(Vector2 touchPos, float touchHoldTime) {
+	IEnumerator TouchEvent_c(Vector2 touchStartPos, Vector2 touchEndPos, int touchType) {
 		//Log touch event receipt
-		LogAction(string.Format ("actionManager: Touch Event received:(Pos:{0},HoldTime:{1})). Checking for action to perform...",touchPos,touchHoldTime));
+		LogAction(string.Format ("actionManager: Touch Event received:(StartPos:{0},EndPos:{1},TypeVal:{2})). Checking for action to perform...",touchStartPos,touchEndPos,(inputType)touchType));
 
 		//Set action in progress
 		actionInProgress = true;
