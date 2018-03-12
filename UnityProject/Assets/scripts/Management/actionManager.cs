@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -91,9 +91,6 @@ public class actionManager : MonoBehaviour {
 		registeredActions[actionCount] = newActionData;
 		actionCount++;
 
-		//Check it is there
-		print(string.Format("action there and enabled?: {0}", registeredActions[actionCount-1].enabled));
-
 		//Return index in list to caller func
 		return (actionCount-1);
 	}
@@ -110,9 +107,6 @@ public class actionManager : MonoBehaviour {
 			//Set action in progress
 			actionInProgress = true;
 
-			print("registered actionzzz: " + actionCount);
-			print("touchStartPos: " + touchStartPos.ToString ());
-
 			//Check through registered actions to see if we have one to perform
 			for (int i = 0; i < (actionCount); i++) {
 				actionData actData = registeredActions[i];
@@ -126,12 +120,22 @@ public class actionManager : MonoBehaviour {
 				Camera cam = Camera.main;
 				tpWs = cam.ScreenToWorldPoint (new Vector3(touchStartPos.x, touchStartPos.y, 0));
 				tpWs.z = 0;
-				print("tpWs: " + tpWs.ToString () + "\tbounds: " + actData.obj.GetComponent<Renderer>().bounds.ToString ());
+				//print("tpWs: " + tpWs.ToString () + "\tbounds: " + actData.obj.GetComponent<Renderer>().bounds.ToString ());
 
 				if (!(actData.obj.GetComponent<Renderer>().bounds.Contains(tpWs))) { continue; };
+
 				//We got this far, invoke the function with the args!
-				actData.func.Method.Invoke(actData.obj, actData.funcArgs);
-			}
+                if (actData.funcArgs == null)
+                {
+                    actData.func.Method.Invoke(actData.func.Target, actData.funcArgs);
+
+                }
+                else
+                {
+                    actData.func.Method.Invoke(actData.func.Target, actData.funcArgs);
+
+                }
+            }
 		
 			//Reset action in progress so that next action can occur
 			actionInProgress = false;
