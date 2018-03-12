@@ -22,8 +22,9 @@ public class gridLayout : MonoBehaviour {
             }
         }
     }
+
 	
 	void Update () {
-		
+
 	}
 }
