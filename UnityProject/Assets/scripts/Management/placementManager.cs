@@ -26,16 +26,28 @@ public class placementManager : MonoBehaviour {
     bool placing = false;
 
     public GameObject farm;
+	private GameObject actManObj;
 
     void Start () {
         checkTouch = GameObject.FindGameObjectWithTag("gameController").GetComponent<touchManager>();
         buildingSelect = GameObject.FindGameObjectWithTag("gameController").GetComponent<buildingSelection>();
         gridArray = GetComponentInParent<gridLayout>();
+
+
+		//Add action test
+		if (actManObj == null) { actManObj = GameObject.Find("gameController"); };
+		actionManager actMan = actManObj.GetComponent<actionManager>();
+		Debug.Log(this.gameObject); Debug.Log(actionManager.inputType.tap);
+		int listId = actMan.AddAction (this.gameObject, actionManager.inputType.tap, true, OnTapped);
 	}
 
 	void Update () {
         currentParent = transform.parent.gameObject;
 
+    }
+
+    void OnTapped() {
+    	print("OnTapped: Hello");
     }
 
     void OnMouseOver()
