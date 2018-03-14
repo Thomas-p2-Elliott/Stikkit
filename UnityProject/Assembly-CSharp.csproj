@@ -53,6 +53,9 @@
      <Compile Include="Assets\scripts\Management\placementManager.cs" />
      <Compile Include="Assets\scripts\Management\timeControl.cs" />
      <Compile Include="Assets\scripts\Management\touchManager.cs" />
+     <Compile Include="Assets\scripts\Toolbar\SlotScripts\Bulldozer.cs" />
+     <Compile Include="Assets\scripts\Toolbar\SlotScripts\Farm01.cs" />
+     <Compile Include="Assets\scripts\Toolbar\toolbarSlot.cs" />
      <Compile Include="Assets\scripts\buildingSelection.cs" />
      <Compile Include="Assets\scripts\buildingStats.cs" />
      <Compile Include="Assets\scripts\gridLayout.cs" />
