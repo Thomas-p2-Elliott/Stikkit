@@ -37,8 +37,7 @@ public class placementManager : MonoBehaviour {
 		//Add action test
 		if (actManObj == null) { actManObj = GameObject.Find("gameController"); };
 		actionManager actMan = actManObj.GetComponent<actionManager>();
-		Debug.Log(this.gameObject); Debug.Log(actionManager.inputType.tap);
-		int listId = actMan.AddAction (this.gameObject, actionManager.inputType.tap, true, OnTapped);
+		//int listId = actMan.AddAction (this.gameObject, actionManager.inputType.tap, true, OnTapped);
 	}
 
 	void Update () {
@@ -48,6 +47,7 @@ public class placementManager : MonoBehaviour {
 
     void OnTapped() {
     	print("OnTapped: Hello");
+
     }
 
     void OnMouseOver()

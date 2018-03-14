@@ -5,6 +5,7 @@ using UnityEngine.AI;
 using NUnit.Framework.Constraints;
 using NUnit.Framework.Internal.Filters;
 using System;
+using NUnit.Framework;
 
 public class actionManager : MonoBehaviour {
 
@@ -16,7 +17,7 @@ public class actionManager : MonoBehaviour {
 		public GameObject 		obj;
 		public inputType 		inpType;
 		public bool 			enabled;
-		public System.Action 	func;
+		public System.Action 		func;
 		public object[] 		funcArgs;
 		//Default constructor, no data validation.
 		public actionData(GameObject iObj, inputType iInpType, bool iEnabled, System.Action iFunc, object[] iFuncArgs = null) {
@@ -109,33 +110,99 @@ public class actionManager : MonoBehaviour {
 
 			//Check through registered actions to see if we have one to perform
 			for (int i = 0; i < (actionCount); i++) {
-				actionData actData = registeredActions[i];
+
+				//Get current action
+				actionData actData = registeredActions [i];
+
 				//Skip disabled actions
-				if (!(actData.enabled)) { continue; };
+				if (!(actData.enabled)) {
+					continue;
+				}
+
 				//Skip when action doesnt match registered one
-				if ((int) actData.inpType != touchType) { continue; };
-				//	Skip if touch is not within bounds of object
+				if ((int)actData.inpType != touchType) {
+					continue;
+				}
+
 				//Convert touch pos to world space
-				Vector3 tpWs = new Vector3();
+				Vector3 tpWs = new Vector3 ();
 				Camera cam = Camera.main;
-				tpWs = cam.ScreenToWorldPoint (new Vector3(touchStartPos.x, touchStartPos.y, 0));
+				tpWs = cam.ScreenToWorldPoint (new Vector3 (touchStartPos.x, touchStartPos.y, 0));
 				tpWs.z = 0;
-				//print("tpWs: " + tpWs.ToString () + "\tbounds: " + actData.obj.GetComponent<Renderer>().bounds.ToString ());
 
-				if (!(actData.obj.GetComponent<Renderer>().bounds.Contains(tpWs))) { continue; };
+				//Log position of touch
+				//print ("tpWs: " + tpWs.ToString ());
+				//Log position of actionable obj
+				//print ("objPos: " + actData.obj.transform.position);
 
-				//We got this far, invoke the function with the args!
-                if (actData.funcArgs == null)
-                {
-                    actData.func.Method.Invoke(actData.func.Target, actData.funcArgs);
+				bool hasRenderer = (actData.obj.GetComponent<Renderer> () == null) ? false : true;
+				bool hasSpriteRenderer = (actData.obj.GetComponent<SpriteRenderer> () == null) ? false : true;
+				//bool hasRect = (actData.obj.GetComponent<Rect> () == null) ? false : true;   //Result of this is always false, need new method?
+				bool hasRectTrans = (actData.obj.GetComponent<RectTransform> () == null) ? false : true;
 
-                }
-                else
-                {
-                    actData.func.Method.Invoke(actData.func.Target, actData.funcArgs);
+				//Log touched obj properties
+				//print (string.Format ("hasRenderer: {0}\thasSpriteRenderer:{1}\thasRect:{2}\thasRectTrans:{3}", hasRenderer, hasSpriteRenderer, hasRect, hasRectTrans));
 
-                }
-            }
+				//If none of the above options then continue to check next action
+				if (!hasRenderer && !hasSpriteRenderer && !hasRectTrans) {
+					continue;
+				}
+
+				//If it has a regular renderer and touch is within its bounds
+				if (hasRenderer) {
+					if (actData.obj.GetComponent<Renderer> ().bounds.Contains (tpWs)) {
+						//Log the action
+						LogAction ("Renderer: " + actData.obj.name + " " + (inputType)touchType + " action started.");
+						//We got this far, invoke the function with the args!
+						actData.func.Method.Invoke (actData.func.Target, actData.funcArgs);
+						//Continue to next action to check
+						continue;
+					} else {
+						continue;
+					}
+				}
+
+				//If it has a sprite renderer and touch is within its bounds
+				if (hasSpriteRenderer) {
+					if (actData.obj.GetComponent<SpriteRenderer> ().bounds.Contains (tpWs)) {
+						//Log the action
+						LogAction ("SpriteRenderer: " + actData.obj.name + " " + (inputType)touchType + " action started.");
+						//We got this far, invoke the function with the args!
+						actData.func.Method.Invoke (actData.func.Target, actData.funcArgs);
+						//Continue to next action to check
+						continue;
+					} else {
+						continue;
+					}
+				}
+
+				//If it has a RectTrans and a Rect and touch is within its bounds
+				if (hasRectTrans) {
+			
+					//Get world space position values for corners
+					Vector3[] fourCornersArr = new Vector3[4];
+					actData.obj.GetComponent<RectTransform> ().GetWorldCorners(fourCornersArr);
+					float xMin = fourCornersArr[0].x;
+					float xMax = fourCornersArr[3].x;
+					float yMin = fourCornersArr[0].y;
+					float yMax = fourCornersArr[1].y;
+					//print ("xMin: " + xMin + "  " +  "xMax: " + xMax + "    " + "yMin: " + yMin + "  " +  "yMax: " + yMax); 
+			
+					//Check if within X bounds
+					if ((tpWs.x >= xMin) && (tpWs.x <= xMax)) {
+						//Check if within y bounds
+						if ((tpWs.y >= yMin) && (tpWs.y <= yMax)) {
+
+							//Within bounds, log action & run the function associated with it!
+							LogAction("Obj: " + actData.obj.name + " " + (inputType) touchType + " action started.");
+				                	actData.func.Method.Invoke(actData.func.Target, actData.funcArgs);
+						}
+					}
+
+					//Continue to check next action in list
+					continue;
+				}
+		        }
 		
 			//Reset action in progress so that next action can occur
 			actionInProgress = false;
